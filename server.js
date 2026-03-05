@@ -4,19 +4,13 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { ElevenLabsClient } from 'elevenlabs';
 // import Anthropic from '@anthropic-ai/sdk';
-import { OpenRouter } from '@openrouter/sdk';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ELEVEN_API_KEY = process.env.ELEVEN_API_KEY || '';
 const elevenlabs = ELEVEN_API_KEY ? new ElevenLabsClient({ apiKey: ELEVEN_API_KEY }) : null;
 
-const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-lite-preview-02-05:free';
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'openrouter/free';
 const DEFAULT_VOICE_ID = process.env.ELEVEN_DEFAULT_VOICE_ID || 'weA4Q36twV5kwSaTEL0Q';
-
-// Initialize OpenRouter client
-const openrouter = new OpenRouter({
-  apiKey: process.env.OPENROUTER_API_KEY,
-});
 
 const app = express();
 app.use(express.json());
@@ -30,31 +24,72 @@ app.get('/favicon.ico', (req, res) => {
   res.status(204).end();
 });
 
+function buildChronosReportPrompt({ day, month, year }) {
+  return `You are the narrative engine of the CHRONOS system.
+
+Generate a historical report for the date: ${day}/${month}/${year}.
+
+Respond ONLY with valid JSON, no markdown, no comments, no extra text:
+{
+  "summary": "Engaging narrative paragraph (3-5 sentences) about what was happening on this day/month/year. Use dramatic, journalistic language.",
+  "facts": [
+    {"label": "Main Event",         "value": "Primary historical occurrence"},
+    {"label": "Political Context",  "value": "Dominant political situation"},
+    {"label": "Technology & Science","value": "State of technology/science"},
+    {"label": "Culture & Society",  "value": "How people lived"},
+    {"label": "Economy",            "value": "Global economic situation"},
+    {"label": "Brazil at the Time", "value": "What was happening in Brazil"}
+  ],
+  "atmosphere": "2-3 poetic and sensory sentences about what it would feel like to physically be there — sounds, smells, sights."
+}`;
+}
+
 app.post('/ai/messages', async (req, res) => {
-  const prompt = typeof req.body?.prompt === 'string' ? req.body.prompt.trim() : '';
-  if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
+  const day = Number.parseInt(req.body?.day, 10);
+  const month = Number.parseInt(req.body?.month, 10);
+  const year = Number.parseInt(req.body?.year, 10);
+
+  if (!Number.isInteger(day) || day < 1 || day > 31) {
+    return res.status(400).json({ error: 'Invalid day' });
+  }
+
+  if (!Number.isInteger(month) || month < 1 || month > 12) {
+    return res.status(400).json({ error: 'Invalid month' });
+  }
+
+  if (!Number.isInteger(year)) {
+    return res.status(400).json({ error: 'Invalid year' });
+  }
+
+  const prompt = buildChronosReportPrompt({ day, month, year });
 
   try {
-    const completion = await openrouter.chat.send({
-      model: OPENROUTER_MODEL,
-      messages: [
-        {
-          role: 'system',
-          content: prompt
-        }
-      ]
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: OPENROUTER_MODEL,
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: prompt }],
+      }),
     });
 
-    const content = completion?.choices?.[0]?.message?.content || '';
-
-    if (!content) {
-      console.warn('Empty content received from OpenRouter');
-      return res.status(502).json({ error: 'OpenRouter empty response' });
+    if (!response.ok) {
+      const err = await response.text();
+      console.error('OpenRouter HTTP error:', response.status, err);
+      return res.status(502).json({ error: 'OpenRouter upstream error' });
     }
 
-    return res.json({
-      content: [{ text: content }]
-    });
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content?.trim();
+
+    if (!content) return res.status(502).json({ error: 'OpenRouter empty response' });
+
+    return res.json({ content: [{ text: content }] });
+
   } catch (err) {
     console.error('OpenRouter Error:', err);
     return res.status(502).json({ error: 'OpenRouter upstream error' });

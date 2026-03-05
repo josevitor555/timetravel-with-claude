@@ -1,10 +1,86 @@
 <!-- SCRIPT.js -->
 
 diff --git a/script.js b/script.js
-index 706fb590283d0c8a8f2419b7d42bc228aca5e8b2..39f8252a44cb21428b5baa0254d71bacf585ac4a 100644
+index 706fb590283d0c8a8f2419b7d42bc228aca5e8b2..c4e75816dcad6476d51795614af1a6e8b61f873e 100644
 --- a/script.js
 +++ b/script.js
-@@ -298,102 +298,116 @@ Responda APENAS com JSON válido, sem markdown, sem explicações:
+@@ -223,71 +223,58 @@ window.startTravel = async function() {
+   const vortex = document.getElementById('vortex');
+   const vortexText = document.getElementById('vortexText');
+   vortex.classList.add('active');
+ 
+   const yearDiff = new Date().getFullYear() - year;
+   const messages = [
+     `⧖ CALCULANDO VETOR TEMPORAL ⧗`,
+     `⧖ ${Math.abs(yearDiff)} ANOS DE DISTÂNCIA ⧗`,
+     `⧖ ATRAVESSANDO O CONTINUUM ⧗`,
+     `⧖ CHEGANDO EM ${year < 0 ? Math.abs(year) + ' a.C.' : year} ⧗`
+   ];
+   let mi = 0;
+   const msgInterval = setInterval(() => {
+     vortexText.textContent = messages[mi % messages.length];
+     mi++;
+   }, 650);
+ 
+   // Start clock animation (2.5s)
+   animateTravelClock(day, month, year, 2400);
+ 
+   // AI call in parallel
+   const monthName = MONTHS[month - 1];
+   let aiSummary = '', aiFacts = [], aiAtmosphere = '';
+ 
+   try {
+-    const prompt = `Você é um historiador especialista. O usuário viajou no tempo para: ${day} de ${monthName} de ${year}.
+-
+-Responda APENAS com JSON válido, sem markdown, sem explicações:
+-{
+-  "summary": "Parágrafo narrativo e envolvente (3-5 frases) sobre o que acontecia nesse dia/mês/ano. Use linguagem dramática e jornalística.",
+-  "facts": [
+-    {"label": "Evento Principal",    "value": "Principal acontecimento histórico"},
+-    {"label": "Contexto Político",   "value": "Situação política dominante"},
+-    {"label": "Tecnologia & Ciência","value": "Estado da tecnologia/ciência"},
+-    {"label": "Cultura & Sociedade", "value": "Como as pessoas viviam"},
+-    {"label": "Economia",            "value": "Situação econômica global"},
+-    {"label": "Brasil na Época",     "value": "O que ocorria no Brasil"}
+-  ],
+-  "atmosphere": "2-3 frases poéticas e sensoriais sobre como seria estar fisicamente lá — sons, cheiros, visões."
+-}`;
+-
+     const resp = await fetch("/ai/messages", {
+       method: "POST",
+       headers: { "Content-Type": "application/json" },
+-      body: JSON.stringify({ prompt })
++      body: JSON.stringify({ day, month, year })
+     });
++
++    if (!resp.ok) throw new Error(`AI error: ${resp.status}`);
++
+     const data = await resp.json();
+     const raw = data.content?.map(i => i.text || '').join('') || '';
+     const clean = raw.replace(/```json|```/g, '').trim();
+     const parsed = JSON.parse(clean);
+     aiSummary = parsed.summary || '';
+     aiFacts = parsed.facts || [];
+     aiAtmosphere = parsed.atmosphere || '';
+   } catch (e) {
+     aiSummary = `Em ${day} de ${monthName} de ${year}, o mundo atravessava um momento singular. Este período foi marcado por eventos que moldariam o curso da humanidade.`;
+     aiFacts = [{ label: 'Período', value: `${year} — ${getEraInfo(year).era}` }];
+     aiAtmosphere = `O ar de ${year} carregava o peso de uma era em transformação...`;
+   }
+ 
+   // Wait minimum 2.8s total for drama
+   await new Promise(r => setTimeout(r, 2800));
+ 
+   clearInterval(msgInterval);
+   vortex.classList.remove('active');
+   btn.disabled = false;
+ 
+   // Populate result card
+   const eraInfo = getEraInfo(year);
+   document.getElementById('resultEra').textContent = getCentury(year);
+   document.getElementById('resultDateBig').textContent =
+     `${String(day).padStart(2, '0')} ${monthName.substring(0, 3).toUpperCase()} ${year < 0 ? Math.abs(year) + ' a.C.' : year}`;
+@@ -298,102 +285,116 @@ Responda APENAS com JSON válido, sem markdown, sem explicações:
    typeWriter(summaryEl, aiSummary, 20);
  
    const grid = document.getElementById('factsGrid');
@@ -131,10 +207,10 @@ index 706fb590283d0c8a8f2419b7d42bc228aca5e8b2..39f8252a44cb21428b5baa0254d71bac
 <!-- SERVER.js -->
 
 diff --git a/server.js b/server.js
-index 76693c0048977280faf2b87969aecfbe939ec85b..b329685e60a948115ccce4897f42bdd748523525 100644
+index 76693c0048977280faf2b87969aecfbe939ec85b..4ba03fce611b0216fe9bd130438de3e72e26d5af 100644
 --- a/server.js
 +++ b/server.js
-@@ -1,113 +1,144 @@
+@@ -1,113 +1,174 @@
  import 'dotenv/config';
  import express from 'express';
  import path from 'path';
@@ -188,22 +264,53 @@ index 76693c0048977280faf2b87969aecfbe939ec85b..b329685e60a948115ccce4897f42bdd7
 +  return fullResponse.choices?.[0]?.message?.content || '';
 +}
 +
++function buildChronosReportPrompt({ day, month, year }) {
++  return `Você é o motor narrativo do sistema CHRONOS.
++
++Gere um relatório histórico para a data: ${day}/${month}/${year}.
++
++Responda APENAS com JSON válido, sem markdown, sem comentários, sem texto extra:
++{
++  "summary": "Parágrafo narrativo e envolvente (3-5 frases) sobre o que acontecia nesse dia/mês/ano. Use linguagem dramática e jornalística.",
++  "facts": [
++    {"label": "Evento Principal",    "value": "Principal acontecimento histórico"},
++    {"label": "Contexto Político",   "value": "Situação política dominante"},
++    {"label": "Tecnologia & Ciência","value": "Estado da tecnologia/ciência"},
++    {"label": "Cultura & Sociedade", "value": "Como as pessoas viviam"},
++    {"label": "Economia",            "value": "Situação econômica global"},
++    {"label": "Brasil na Época",     "value": "O que ocorria no Brasil"}
++  ],
++  "atmosphere": "2-3 frases poéticas e sensoriais sobre como seria estar fisicamente lá — sons, cheiros, visões."
++}`;
++}
++
  app.post('/ai/messages', async (req, res) => {
 -  const { prompt } = req.body || {};
-+  const prompt = typeof req.body?.prompt === 'string' ? req.body.prompt.trim() : '';
-   if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
+-  if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
++  const day = Number.parseInt(req.body?.day, 10);
++  const month = Number.parseInt(req.body?.month, 10);
++  const year = Number.parseInt(req.body?.year, 10);
++
++  if (!Number.isInteger(day) || day < 1 || day > 31) {
++    return res.status(400).json({ error: 'Invalid day' });
++  }
++
++  if (!Number.isInteger(month) || month < 1 || month > 12) {
++    return res.status(400).json({ error: 'Invalid month' });
++  }
++
++  if (!Number.isInteger(year)) {
++    return res.status(400).json({ error: 'Invalid year' });
++  }
++
++  const systemPrompt = buildChronosReportPrompt({ day, month, year });
  
    try {
      const response = await openrouter.callModel({
 -      model: 'google/gemini-2.0-flash-lite-preview-02-05:free', // OpenRouter model ID
 -      messages: [{ role: 'user', content: prompt }]
 +      model: OPENROUTER_MODEL,
-+      input: [
-+        {
-+          role: 'user',
-+          content: [{ type: 'input_text', text: prompt }]
-+        }
-+      ]
++      input: systemPrompt
      });
 -    
 -    // The callModel function returns a ModelResult object, not a direct API response.

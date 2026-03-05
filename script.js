@@ -245,27 +245,13 @@ window.startTravel = async function () {
   let aiSummary = '', aiFacts = [], aiAtmosphere = '';
 
   try {
-    const prompt = `Você é um historiador especialista. O usuário viajou no tempo para: ${day} de ${monthName} de ${year}.
-
-Responda APENAS com JSON válido, sem markdown, sem explicações:
-{
-  "summary": "Parágrafo narrativo e envolvente (3-5 frases) sobre o que acontecia nesse dia/mês/ano. Use linguagem dramática e jornalística.",
-  "facts": [
-    {"label": "Evento Principal",    "value": "Principal acontecimento histórico"},
-    {"label": "Contexto Político",   "value": "Situação política dominante"},
-    {"label": "Tecnologia & Ciência","value": "Estado da tecnologia/ciência"},
-    {"label": "Cultura & Sociedade", "value": "Como as pessoas viviam"},
-    {"label": "Economia",            "value": "Situação econômica global"},
-    {"label": "Brasil na Época",     "value": "O que ocorria no Brasil"}
-  ],
-  "atmosphere": "2-3 frases poéticas e sensoriais sobre como seria estar fisicamente lá — sons, cheiros, visões."
-}`;
-
     const resp = await fetch("/ai/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt })
+      body: JSON.stringify({ day, month, year })
     });
+
+    if (!resp.ok) throw new Error(`AI error: ${resp.status}`);
     const data = await resp.json();
     const raw = data.content?.map(i => i.text || '').join('') || '';
     const clean = raw.replace(/```json|```/g, '').trim();

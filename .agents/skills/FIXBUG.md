@@ -76,9 +76,16 @@ Evitar narração sempre com a mesma identidade vocal e melhorar a imersão por 
 ## 5) Smoke test rápido
 
 1. `npm start`
-2. Fazer `POST /ai/messages` com `{"prompt":"teste"}` e validar `content[0].text`.
+2. Fazer `POST /ai/messages` com `{"day":7,"month":9,"year":1822}` e validar `content[0].text`.
 3. Fazer `POST /tts` com `{"text":"olá","voiceId":"<id válido>"}` e validar `audio/mpeg`.
 4. Rodar fluxo completo no navegador e confirmar:
    - resumo histórico aparece;
    - narração toca;
    - voz muda entre anos distantes.
+
+## 6) Contrato correto de IA no CHRONOS
+
+- O frontend **não** envia prompt livre de usuário para IA.
+- O frontend envia apenas parâmetros temporais (`day`, `month`, `year`).
+- O backend monta internamente o prompt de sistema para geração do relatório histórico.
+- Isso reduz erro de formato e mantém consistência editorial da experiência.
