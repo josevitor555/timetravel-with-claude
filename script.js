@@ -20,9 +20,9 @@ for (let i = 0; i < 60; i++) {
 }
 
 // ─── State ───────────────────────────────────────────────
-const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-const DAYS_PT = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'];
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 let clockInterval = null;
 let isInPast = false;
@@ -36,13 +36,13 @@ function updatePresentClock() {
   const s = String(now.getSeconds()).padStart(2, '0');
   document.getElementById('clock-display').textContent = `${h}:${m}:${s}`;
   document.getElementById('date-display').textContent =
-    `${DAYS_PT[now.getDay()]}, ${now.getDate()} de ${MONTHS[now.getMonth()]} de ${now.getFullYear()}`;
+    `${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
 }
 
 function startPresentClock() {
   stopClock();
   isInPast = false;
-  document.getElementById('clockLabel').textContent = '◆ PRESENTE ◆';
+  document.getElementById('clockLabel').textContent = '◆ PRESENT ◆';
   document.getElementById('liveClock').classList.remove('traveling', 'in-past');
   updatePresentClock();
   clockInterval = setInterval(updatePresentClock, 1000);
@@ -63,30 +63,36 @@ window.setDate = function (d, m, y) {
 
 // ─── Helpers ─────────────────────────────────────────────
 function getEraInfo(year) {
-  if (year < -2999) return { era: 'Pré-história', badge: 'Paleolítico' };
-  if (year < -500) return { era: 'Antiguidade', badge: 'Mundo Antigo' };
-  if (year < 500) return { era: 'Antiguidade Clássica', badge: 'Gregos & Romanos' };
-  if (year < 1400) return { era: 'Idade Média', badge: 'Era Medieval' };
-  if (year < 1600) return { era: 'Renascimento', badge: 'Era Moderna Inicial' };
-  if (year < 1800) return { era: 'Era das Luzes', badge: 'Século XVII-XVIII' };
-  if (year < 1900) return { era: 'Século XIX', badge: 'Era Industrial' };
-  if (year < 1945) return { era: 'Início do Século XX', badge: 'Guerras Mundiais' };
-  if (year < 1990) return { era: 'Guerra Fria', badge: 'Século XX' };
-  if (year < 2000) return { era: 'Fim do Milênio', badge: 'Anos 90' };
-  return { era: 'Século XXI', badge: 'Era Digital' };
+  if (year < -2999) return { era: 'Prehistory', badge: 'Paleolithic' };
+  if (year < -500) return { era: 'Antiquity', badge: 'Ancient World' };
+  if (year < 500) return { era: 'Classical Antiquity', badge: 'Greeks & Romans' };
+  if (year < 1400) return { era: 'Middle Ages', badge: 'Medieval Era' };
+  if (year < 1600) return { era: 'Renaissance', badge: 'Early Modern Era' };
+  if (year < 1800) return { era: 'Age of Enlightenment', badge: '17th-18th Century' };
+  if (year < 1900) return { era: '19th Century', badge: 'Industrial Era' };
+  if (year < 1945) return { era: 'Early 20th Century', badge: 'World Wars' };
+  if (year < 1990) return { era: 'Cold War', badge: '20th Century' };
+  if (year < 2000) return { era: 'End of Millennium', badge: '90s' };
+  return { era: '21st Century', badge: 'Digital Era' };
+}
+
+function getOrdinal(n) {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
 function getCentury(year) {
-  if (year <= 0) return `${Math.abs(year - 99)} a.C.`;
+  if (year <= 0) return `${Math.abs(year - 99)} BC`;
   const c = Math.ceil(year / 100);
-  return `Século ${c}º`;
+  return `${c}${getOrdinal(c)} Century`;
 }
 
 function getDayOfWeek(day, month, year) {
   if (year < 1582) return ''; // Julian calendar edge case
   try {
     const d = new Date(year, month - 1, day);
-    return DAYS_PT[d.getDay()];
+    return DAYS[d.getDay()];
   } catch (e) { return ''; }
 }
 
@@ -117,7 +123,7 @@ function animateTravelClock(targetDay, targetMonth, targetYear, durationMs) {
   const label = document.getElementById('clockLabel');
 
   clock.classList.add('traveling');
-  label.textContent = '⧖ VIAJANDO ⧖';
+  label.textContent = '⧖ TRAVELING ⧖';
 
   const startYear = new Date().getFullYear();
   const startMs = performance.now();
@@ -163,7 +169,7 @@ function animateTravelClock(targetDay, targetMonth, targetYear, durationMs) {
       dateDisp.textContent = `${String(targetDay).padStart(2, '0')} / ${String(targetMonth).padStart(2, '0')} / ${targetYear}`;
       clock.classList.remove('traveling');
       clock.classList.add('in-past');
-      label.textContent = `◆ ${targetYear < 0 ? Math.abs(targetYear) + ' a.C.' : targetYear} ◆`;
+      label.textContent = `◆ ${targetYear < 0 ? Math.abs(targetYear) + ' BC' : targetYear} ◆`;
 
       // Start ticking in the past (same H:M:S rhythm, frozen date)
       startPastClock(targetDay, targetMonth, targetYear);
@@ -193,7 +199,7 @@ function startPastClock(day, month, year) {
 
     const weekDay = getDayOfWeek(day, month, year);
     const wdStr = weekDay ? `${weekDay}, ` : '';
-    dateDisp.textContent = `${wdStr}${String(day).padStart(2, '0')} de ${MONTHS[month - 1]} de ${year}`;
+    dateDisp.textContent = `${wdStr}${MONTHS[month - 1]} ${String(day).padStart(2, '0')}, ${year}`;
     dateDisp.style.fontSize = '0.75rem';
     dateDisp.style.opacity = '0.85';
     dateDisp.style.letterSpacing = '0.15em';
@@ -201,7 +207,7 @@ function startPastClock(day, month, year) {
 
   tick();
   clockInterval = setInterval(tick, 1000);
-  label.textContent = `◆ ${year < 0 ? Math.abs(year) + ' a.C.' : year} ◆`;
+  label.textContent = `◆ ${year < 0 ? Math.abs(year) + ' BC' : year} ◆`;
   clock.classList.add('in-past');
 }
 
@@ -212,7 +218,7 @@ window.startTravel = async function () {
   const year = parseInt(document.getElementById('year').value) || 1900;
 
   if (year > new Date().getFullYear()) {
-    alert('⚠️ Não é possível viajar para o futuro... ainda.');
+    alert('⚠️ Cannot travel to the future... yet.');
     return;
   }
 
@@ -226,10 +232,10 @@ window.startTravel = async function () {
 
   const yearDiff = new Date().getFullYear() - year;
   const messages = [
-    `⧖ CALCULANDO VETOR TEMPORAL ⧗`,
-    `⧖ ${Math.abs(yearDiff)} ANOS DE DISTÂNCIA ⧗`,
-    `⧖ ATRAVESSANDO O CONTINUUM ⧗`,
-    `⧖ CHEGANDO EM ${year < 0 ? Math.abs(year) + ' a.C.' : year} ⧗`
+    `⧖ CALCULATING TEMPORAL VECTOR ⧗`,
+    `⧖ ${Math.abs(yearDiff)} YEARS AWAY ⧗`,
+    `⧖ CROSSING THE CONTINUUM ⧗`,
+    `⧖ ARRIVING IN ${year < 0 ? Math.abs(year) + ' BC' : year} ⧗`
   ];
   let mi = 0;
   const msgInterval = setInterval(() => {
@@ -260,9 +266,9 @@ window.startTravel = async function () {
     aiFacts = parsed.facts || [];
     aiAtmosphere = parsed.atmosphere || '';
   } catch (e) {
-    aiSummary = `Em ${day} de ${monthName} de ${year}, o mundo atravessava um momento singular. Este período foi marcado por eventos que moldariam o curso da humanidade.`;
-    aiFacts = [{ label: 'Período', value: `${year} — ${getEraInfo(year).era}` }];
-    aiAtmosphere = `O ar de ${year} carregava o peso de uma era em transformação...`;
+    aiSummary = `On ${monthName} ${day}, ${year}, the world was going through a unique moment. This period was marked by events that would shape the course of humanity.`;
+    aiFacts = [{ label: 'Period', value: `${year} — ${getEraInfo(year).era}` }];
+    aiAtmosphere = `The air of ${year} carried the weight of an era in transformation...`;
   }
 
   // Wait minimum 2.8s total for drama
@@ -276,7 +282,7 @@ window.startTravel = async function () {
   const eraInfo = getEraInfo(year);
   document.getElementById('resultEra').textContent = getCentury(year);
   document.getElementById('resultDateBig').textContent =
-    `${String(day).padStart(2, '0')} ${monthName.substring(0, 3).toUpperCase()} ${year < 0 ? Math.abs(year) + ' a.C.' : year}`;
+    `${String(day).padStart(2, '0')} ${monthName.substring(0, 3).toUpperCase()} ${year < 0 ? Math.abs(year) + ' BC' : year}`;
   document.getElementById('eraBadge').textContent = eraInfo.badge;
 
   const summaryEl = document.getElementById('summaryText');
@@ -311,16 +317,10 @@ window.startTravel = async function () {
 
 // ─── ElevenLabs TTS ──────────────────────────────────────
 const ELEVEN_MODEL = 'eleven_multilingual_v2';
-const VOICE_BY_ERA = [
-  { until: 500, voiceId: 'pNInz6obpgDQGcFmaJgB' },      // Adam
-  { until: 1800, voiceId: 'VR6AewLTigWG4xSOukaG' },     // Arnold
-  { until: 1945, voiceId: 'TxGEqnHWrfWFTfGW9XjX' },     // Josh
-  { until: 2100, voiceId: 'EXAVITQu4vr4xnSDxMaL' }      // Bella
-];
+const VOICE_ID = 'uYXf8XasLslADfZ2MB4u'; // (Robotized)
 
 function getDynamicVoiceId(year) {
-  const eraVoice = VOICE_BY_ERA.find(v => year <= v.until);
-  return eraVoice?.voiceId || VOICE_BY_ERA[VOICE_BY_ERA.length - 1].voiceId;
+  return VOICE_ID;
 }
 
 let currentAudio = null;
@@ -399,7 +399,7 @@ async function fetchTTS(text, year = new Date().getFullYear()) {
   } catch (err) {
     console.error('TTS error:', err);
     ttsLoading.classList.remove('visible');
-    ttsLoading.innerHTML = '<span style="color:rgba(201,168,76,0.5);font-size:0.58rem;letter-spacing:0.15em">Narração indisponível</span>';
+    ttsLoading.innerHTML = '<span style="color:rgba(201,168,76,0.5);font-size:0.58rem;letter-spacing:0.15em">Narration unavailable</span>';
     ttsLoading.classList.add('visible');
   }
 }
@@ -446,7 +446,7 @@ window.returnToPresent = function () {
   const vortexText = document.getElementById('vortexText');
   const clock = document.getElementById('liveClock');
 
-  vortexText.textContent = '⧖ RETORNANDO AO PRESENTE ⧗';
+  vortexText.textContent = '⧖ RETURNING TO PRESENT ⧗';
   vortex.classList.add('active');
 
   // Reverse-roll the clock back to now

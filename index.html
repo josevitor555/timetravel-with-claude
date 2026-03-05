@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CHRONOS — Máquina do Tempo</title>
+  <title>CHRONOS — Time Machine</title>
   <link
     href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@400;700;900&display=swap"
     rel="stylesheet">
@@ -24,7 +24,7 @@
     <div class="vortex-ring" style="width:100px;height:100px;animation-delay:0s"></div>
     <div class="vortex-ring" style="width:200px;height:200px;animation-delay:0.3s"></div>
     <div class="vortex-ring" style="width:350px;height:350px;animation-delay:0.6s"></div>
-    <div class="vortex-text" id="vortexText">⧖ VIAJANDO NO TEMPO ⧗</div>
+    <div class="vortex-text" id="vortexText">⧖ TRAVELING THROUGH TIME ⧗</div>
   </div>
 
   <div class="container">
@@ -34,50 +34,50 @@
       <div class="logo-line">
         <h1>CHRONOS</h1>
       </div>
-      <div class="subtitle">✦ Máquina de Viagem no Tempo ✦</div>
+      <div class="subtitle">✦ Time Travel Machine ✦</div>
     </div>
 
     <!-- Live Clock -->
     <div class="live-clock" id="liveClock">
-      <span class="clock-label" id="clockLabel">◆ PRESENTE ◆</span>
+      <span class="clock-label" id="clockLabel">◆ PRESENT ◆</span>
       <div id="clock-display">00:00:00</div>
-      <div id="date-display">Carregando...</div>
+      <div id="date-display">Loading...</div>
     </div>
 
     <!-- Input Panel -->
     <div class="panel" id="inputPanel">
-      <div class="panel-title">✦ Destino Temporal ✦</div>
+      <div class="panel-title">✦ Temporal Destination ✦</div>
 
       <div class="input-row">
         <div class="input-group">
-          <label>Dia</label>
+          <label>Day</label>
           <input type="number" id="day" min="1" max="31" placeholder="DD" value="12">
         </div>
         <div class="input-group">
-          <label>Mês</label>
+          <label>Month</label>
           <select id="month">
-            <option value="1">Janeiro</option>
-            <option value="2">Fevereiro</option>
-            <option value="3">Março</option>
-            <option value="4">Abril</option>
-            <option value="5">Maio</option>
-            <option value="6">Junho</option>
-            <option value="7">Julho</option>
-            <option value="8">Agosto</option>
-            <option value="9">Setembro</option>
-            <option value="10">Outubro</option>
-            <option value="11">Novembro</option>
-            <option value="12" selected>Dezembro</option>
+            <option value="1">January</option>
+            <option value="2">February</option>
+            <option value="3">March</option>
+            <option value="4">April</option>
+            <option value="5">May</option>
+            <option value="6">June</option>
+            <option value="7">July</option>
+            <option value="8">August</option>
+            <option value="9">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12" selected>December</option>
           </select>
         </div>
         <div class="input-group">
-          <label>Ano</label>
-          <input type="number" id="year" min="-3000" max="2024" placeholder="AAAA" value="1939">
+          <label>Year</label>
+          <input type="number" id="year" min="-3000" max="2024" placeholder="YYYY" value="1939">
         </div>
       </div>
 
       <div style="margin-bottom:16px;">
-        <label style="margin-bottom:8px;display:block;">Datas Históricas Rápidas</label>
+        <label style="margin-bottom:8px;display:block;">Quick Historical Dates</label>
         <div class="quick-dates">
           <button class="quick-btn" onclick="setDate(7,7,1776)">🇺🇸 1776</button>
           <button class="quick-btn" onclick="setDate(28,7,1914)">⚔️ 1914</button>
@@ -89,7 +89,7 @@
       </div>
 
       <button class="travel-btn" id="travelBtn" onclick="startTravel()">
-        ⧖ &nbsp; INICIAR VIAGEM NO TEMPO &nbsp; ⧗
+        ⧖ &nbsp; START TIME TRAVEL &nbsp; ⧗
       </button>
     </div>
 
@@ -97,26 +97,26 @@
     <div class="result-card" id="resultCard">
       <div class="result-header">
         <div>
-          <div class="result-era" id="resultEra">Século XX</div>
+          <div class="result-era" id="resultEra">20th Century</div>
           <div class="result-date-big" id="resultDateBig">01 Jan 1900</div>
         </div>
-        <span class="era-badge" id="eraBadge">Era Moderna</span>
+        <span class="era-badge" id="eraBadge">Modern Era</span>
       </div>
       <div class="result-body">
         <div class="result-section">
-          <div class="result-section-title">Resumo Histórico</div>
+          <div class="result-section-title">Historical Summary</div>
           <div class="summary-text typewriter" id="summaryText">
             <div class="loading-dots"><span></span><span></span><span></span></div>
           </div>
         </div>
 
         <div class="result-section" id="factsSection">
-          <div class="result-section-title">Contexto da Época</div>
+          <div class="result-section-title">Period Context</div>
           <div class="facts-grid" id="factsGrid"></div>
         </div>
 
         <div class="result-section" id="atmosphereSection">
-          <div class="result-section-title">Atmosfera do Período</div>
+          <div class="result-section-title">Period Atmosphere</div>
           <div class="summary-text" id="atmosphereText"></div>
         </div>
 
@@ -125,16 +125,16 @@
       <!-- ElevenLabs Audio Bar -->
       <div class="audio-bar" id="audioBar">
         <button class="audio-btn" id="playPauseBtn" onclick="toggleAudio()" disabled
-          title="Reproduzir narração">▶</button>
-        <span class="audio-label">Narração</span>
+          title="Play narration">▶</button>
+        <span class="audio-label">Narration</span>
         <div class="waveform" id="waveform"></div>
         <div class="tts-loading" id="ttsLoading">
           <div class="tts-spinner"></div>
-          <span>Sintetizando voz...</span>
+          <span>Synthesizing voice...</span>
         </div>
       </div>
 
-      <button class="return-btn" onclick="returnToPresent()">↩ Retornar ao Presente</button>
+      <button class="return-btn" onclick="returnToPresent()">↩ Return to Present</button>
     </div>
 
   </div>
