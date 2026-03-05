@@ -10,6 +10,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ELEVEN_API_KEY = process.env.ELEVEN_API_KEY || '';
 const elevenlabs = ELEVEN_API_KEY ? new ElevenLabsClient({ apiKey: ELEVEN_API_KEY }) : null;
 
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-lite-preview-02-05:free';
+const DEFAULT_VOICE_ID = process.env.ELEVEN_DEFAULT_VOICE_ID || 'weA4Q36twV5kwSaTEL0Q';
+
 // Initialize OpenRouter client
 const openrouter = new OpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY,
@@ -28,59 +31,53 @@ app.get('/favicon.ico', (req, res) => {
 });
 
 app.post('/ai/messages', async (req, res) => {
-  const { prompt } = req.body || {};
+  const prompt = typeof req.body?.prompt === 'string' ? req.body.prompt.trim() : '';
   if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
 
   try {
-    const response = await openrouter.callModel({
-      model: 'google/gemini-2.0-flash-lite-preview-02-05:free', // OpenRouter model ID
-      messages: [{ role: 'user', content: prompt }]
+    const completion = await openrouter.chat.send({
+      model: OPENROUTER_MODEL,
+      messages: [
+        {
+          role: 'system',
+          content: prompt
+        }
+      ]
     });
-    
-    // The callModel function returns a ModelResult object, not a direct API response.
-    // We need to await .getText() or .getResponse() to get the content.
-    // https://github.com/OpenRouterTeam/openrouter-runner/blob/main/packages/sdk/src/lib/model-result.ts
-    
-    let content = "";
-    
-    try {
-      // Try to get just the text content
-      content = await response.getText();
-    } catch (textError) {
-       console.error('Error getting text from OpenRouter response:', textError);
-       // Fallback: try to get full response object
-       try {
-         const fullResponse = await response.getResponse();
-         content = fullResponse.choices?.[0]?.message?.content || "";
-       } catch (respError) {
-         console.error('Error getting full response:', respError);
-       }
-    }
+
+    const content = completion?.choices?.[0]?.message?.content || '';
 
     if (!content) {
-        console.warn('Empty content received from OpenRouter');
+      console.warn('Empty content received from OpenRouter');
+      return res.status(502).json({ error: 'OpenRouter empty response' });
     }
 
-    res.json({
+    return res.json({
       content: [{ text: content }]
     });
-
   } catch (err) {
     console.error('OpenRouter Error:', err);
-    res.status(502).json({ error: 'OpenRouter upstream error', detail: String(err) });
+    return res.status(502).json({ error: 'OpenRouter upstream error' });
   }
 });
 
 app.post('/tts', async (req, res) => {
-  const { text, voiceId } = req.body;
+  const text = typeof req.body?.text === 'string' ? req.body.text.trim() : '';
+  const voiceId = typeof req.body?.voiceId === 'string' && req.body.voiceId.trim()
+    ? req.body.voiceId.trim()
+    : DEFAULT_VOICE_ID;
+  const modelId = typeof req.body?.modelId === 'string' && req.body.modelId.trim()
+    ? req.body.modelId.trim()
+    : 'eleven_multilingual_v2';
+
   if (!text) return res.status(400).json({ error: 'Missing text' });
   if (!elevenlabs) return res.status(500).json({ error: 'Missing ELEVEN_API_KEY' });
 
   try {
     const audioStream = await elevenlabs.generate({
-      voice: voiceId || 'weA4Q36twV5kwSaTEL0Q',
+      voice: voiceId,
       text,
-      model_id: 'eleven_multilingual_v2',
+      model_id: modelId,
       voice_settings: {
         stability: 0.5,
         similarity_boost: 0.8,
@@ -96,7 +93,6 @@ app.post('/tts', async (req, res) => {
       res.write(chunk);
     }
     res.end();
-
   } catch (err) {
     const status = err?.statusCode || 500;
     const detail = err?.response?.data || err?.message || 'Unknown error';

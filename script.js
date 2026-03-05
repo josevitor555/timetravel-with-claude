@@ -55,7 +55,7 @@ function stopClock() {
 startPresentClock();
 
 // ─── Quick date set ──────────────────────────────────────
-window.setDate = function(d, m, y) {
+window.setDate = function (d, m, y) {
   document.getElementById('day').value = d;
   document.getElementById('month').value = m;
   document.getElementById('year').value = y;
@@ -206,7 +206,7 @@ function startPastClock(day, month, year) {
 }
 
 // ─── MAIN TRAVEL FUNCTION ────────────────────────────────
-window.startTravel = async function() {
+window.startTravel = async function () {
   const day = parseInt(document.getElementById('day').value) || 1;
   const month = parseInt(document.getElementById('month').value) || 1;
   const year = parseInt(document.getElementById('year').value) || 1900;
@@ -320,12 +320,22 @@ Responda APENAS com JSON válido, sem markdown, sem explicações:
 
   // Delay then speak: summary + atmosphere
   const narrationText = `${aiSummary} ... ${aiAtmosphere}`;
-  setTimeout(() => fetchTTS(narrationText), 900);
+  setTimeout(() => fetchTTS(narrationText, year), 900);
 }
 
 // ─── ElevenLabs TTS ──────────────────────────────────────
-const ELEVEN_VOICE_ID = 'pNInz6obpgDQGcFmaJgB';
 const ELEVEN_MODEL = 'eleven_multilingual_v2';
+const VOICE_BY_ERA = [
+  { until: 500, voiceId: 'pNInz6obpgDQGcFmaJgB' },      // Adam
+  { until: 1800, voiceId: 'VR6AewLTigWG4xSOukaG' },     // Arnold
+  { until: 1945, voiceId: 'TxGEqnHWrfWFTfGW9XjX' },     // Josh
+  { until: 2100, voiceId: 'EXAVITQu4vr4xnSDxMaL' }      // Bella
+];
+
+function getDynamicVoiceId(year) {
+  const eraVoice = VOICE_BY_ERA.find(v => year <= v.until);
+  return eraVoice?.voiceId || VOICE_BY_ERA[VOICE_BY_ERA.length - 1].voiceId;
+}
 
 let currentAudio = null;
 let isPlaying = false;
@@ -352,7 +362,7 @@ function setWaveformActive(active) {
   });
 }
 
-async function fetchTTS(text) {
+async function fetchTTS(text, year = new Date().getFullYear()) {
   // Show loading state
   const audioBar = document.getElementById('audioBar');
   const ttsLoading = document.getElementById('ttsLoading');
@@ -371,7 +381,11 @@ async function fetchTTS(text) {
     const response = await fetch('/tts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, voiceId: ELEVEN_VOICE_ID })
+      body: JSON.stringify({
+        text,
+        voiceId: getDynamicVoiceId(year),
+        modelId: ELEVEN_MODEL
+      })
     });
 
     if (!response.ok) throw new Error(`ElevenLabs error: ${response.status}`);
@@ -431,13 +445,13 @@ function stopAudio() {
   document.getElementById('playPauseBtn').textContent = '▶';
 }
 
-window.toggleAudio = function() {
+window.toggleAudio = function () {
   if (isPlaying) pauseAudio();
   else playAudio();
 }
 
 // ─── RETURN TO PRESENT ───────────────────────────────────
-window.returnToPresent = function() {
+window.returnToPresent = function () {
   stopAudio();
   document.getElementById('audioBar').classList.remove('visible');
 
